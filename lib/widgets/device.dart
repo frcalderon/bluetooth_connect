@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'package:iot_sensor_reader/device_screen.dart';
 
 class Device extends StatefulWidget {
   const Device({super.key, required this.device});
@@ -15,7 +16,7 @@ class _DeviceState extends State<Device> {
   // List<BluetoothService> _services = [];
   // var _connection;
 
-  Future<void> connect() async {
+  connect() {
     // try {
     //   await widget.device.connect();
     // } catch (e) {
@@ -24,12 +25,13 @@ class _DeviceState extends State<Device> {
     //   _services = await widget.device.discoverServices();
     //   print(_services);
     // }
-    
 
     setState(() {
       // _connection = widget.device.device.connect();
       _connected = true;
     });
+
+    return DeviceScreen(device: widget.device);
   }
 
   Widget getStatus(connected) {
@@ -38,19 +40,59 @@ class _DeviceState extends State<Device> {
         : const Text('Status: Not connected');
   }
 
-  Widget getDeviceName(device) {
+  Widget getDeviceName() {
     var name = 'Unkown Device';
 
-    if (device.name.isNotEmpty) {
-      name = device.name;
+    if (widget.device.name.isNotEmpty) {
+      name = widget.device.name;
     }
 
     return Text('Name: $name');
   }
 
-  Widget getDeviceMacAddress(device) {
-    var macAddress = device.id.id;
+  Widget getDeviceMacAddress() {
+    var macAddress = widget.device.id.id;
     return Text('MAC Address: $macAddress');
+  }
+
+  Widget getConnectButton(context) {
+    return StreamBuilder<BluetoothDeviceState>(
+        stream: widget.device.state,
+        initialData: BluetoothDeviceState.connecting,
+        builder: (c, snapshot) {
+          VoidCallback? onPressed;
+          String text;
+          switch (snapshot.data) {
+            case BluetoothDeviceState.connected:
+              onPressed = () => widget.device.disconnect();
+              text = 'Disconnect';
+              break;
+            case BluetoothDeviceState.disconnected:
+              onPressed = () => {
+                    widget.device.connect(),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DeviceScreen(
+                          device: widget.device,
+                        ),
+                      ),
+                    )
+                  };
+              text = 'Connect';
+              break;
+            default:
+              onPressed = null;
+              text = snapshot.data.toString().substring(21).toUpperCase();
+              break;
+          }
+
+          return ElevatedButton(onPressed: onPressed, child: Text(text));
+        });
+  }
+
+  Widget getDeviceServices() {
+    return Column();
   }
 
   @override
@@ -61,15 +103,12 @@ class _DeviceState extends State<Device> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            getDeviceName(widget.device),
-            getDeviceMacAddress(widget.device),
-            getStatus(_connected),
+            getDeviceName(),
+            getDeviceMacAddress(),
+            // getStatus(_connected),
           ],
         ),
-        ElevatedButton(
-          onPressed: connect,
-          child: const Text('Connect'),
-        ),
+        getConnectButton(context),
       ],
     );
   }
