@@ -83,13 +83,6 @@ class _ScannerState extends State<Scanner> {
     }
   }
 
-  // ListView _buildView() {
-  //   if (_connectedDevice != null) {
-  //     return _buildConnectDeviceView();
-  //   }
-  //   return _buildListViewOfDevices();
-  // }
-
   ListView _buildListViewOfDevices() {
     return ListView.separated(
         padding: const EdgeInsets.all(8),
@@ -99,13 +92,6 @@ class _ScannerState extends State<Scanner> {
         },
         separatorBuilder: (BuildContext context, int index) => const Divider());
   }
-
-  // ListView _buildConnectDeviceView() {
-  //   return ListView(
-  //     padding: const EdgeInsets.all(8),
-  //     children: <Widget>[],
-  //   );
-  // }
 
   Text getButtonText() {
     return (_isScanning) ? const Text('Stop') : const Text('Start');

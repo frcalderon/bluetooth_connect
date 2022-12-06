@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
+import 'utils/request.dart' show postHumidity, postTemperature;
 
 class DeviceScreen extends StatelessWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
 
   final BluetoothDevice device;
+
+  final String temperatureUUID = "00000000-0000-0000-0000-000000000001";
+  final String humidityUUID = "00000000-0000-0000-0000-000000000002";
   
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
     return services
@@ -19,23 +23,10 @@ class DeviceScreen extends StatelessWidget {
                             Text('Characteristic: ${characteristic.uuid.toString()}'),
                             ElevatedButton(
                               onPressed: () async {
-                                await characteristic.setNotifyValue(!characteristic.isNotifying);
-                                characteristic.value.listen((value) {
-                                  print(value);
-                                });
+                                await handleEvent(characteristic);
                               },
                               child: const Text('Notify'),
                             ),
-                            // Column(
-                            //   children: characteristic.descriptors
-                            //       .map(
-                            //         (descriptor) => Text(
-                            //             'Descriptor: 0x${descriptor.uuid.toString().toUpperCase()}'),
-                            //         //         onReadPressed: () => d.read(),
-                            //         // onWritePressed: () => d.write(_getRandomBytes()),
-                            //       )
-                            //       .toList(),
-                            // )
                           ],
                         ),
                       )
@@ -136,5 +127,20 @@ class DeviceScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  handleEvent(characteristic) async {
+    await characteristic.setNotifyValue(!characteristic.isNotifying);
+    characteristic.value.listen((value) {
+      if(!value.isEmpty) {
+        if (characteristic.uuid.toString() == temperatureUUID) {
+          print("Temperature: ${value[0]}");
+          postTemperature(value[0].toString());
+        } else if (characteristic.uuid.toString() == humidityUUID) {
+          print("Humidity: ${value[0]}");
+          postHumidity(value[0].toString());
+        }
+      }
+    });
   }
 }
