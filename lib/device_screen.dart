@@ -15,8 +15,6 @@ class DeviceScreenState extends State<DeviceScreen> {
   final String temperatureUUID = "00000000-0000-0000-0000-000000000001";
   final String humidityUUID = "00000000-0000-0000-0000-000000000002";
 
-  String buttonText = 'Notify';
-
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
     return services
         .map((service) => Column(
@@ -32,7 +30,7 @@ class DeviceScreenState extends State<DeviceScreen> {
                               onPressed: () async {
                                 await handleEvent(characteristic);
                               },
-                              child: Text(buttonText),
+                              child: characteristic.isNotifying ? const Text("Not Notify") : const Text('Notify'),
                             ),
                           ],
                         ),
@@ -139,9 +137,7 @@ class DeviceScreenState extends State<DeviceScreen> {
   handleEvent(characteristic) async {
     await characteristic.setNotifyValue(!characteristic.isNotifying);
 
-    setState(() {
-      buttonText = (characteristic.isNotifying) ? 'Not Notify' : 'Notify';
-    });
+    setState(() {});
 
     characteristic.value.listen((value) {
       if (!value.isEmpty) {
