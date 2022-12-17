@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'utils/request.dart' show postHumidity, postTemperature;
 
-class DeviceScreen extends StatelessWidget {
+class DeviceScreen extends StatefulWidget {
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
 
   final BluetoothDevice device;
 
+  @override
+  DeviceScreenState createState() => DeviceScreenState();
+}
+
+class DeviceScreenState extends State<DeviceScreen> {
   final String temperatureUUID = "00000000-0000-0000-0000-000000000001";
   final String humidityUUID = "00000000-0000-0000-0000-000000000002";
-  
+
+  String buttonText = 'Notify';
+
   List<Widget> _buildServiceTiles(List<BluetoothService> services) {
     return services
         .map((service) => Column(
@@ -41,21 +48,21 @@ class DeviceScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(device.name),
+        title: Text(widget.device.name),
         actions: <Widget>[
           StreamBuilder<BluetoothDeviceState>(
-            stream: device.state,
+            stream: widget.device.state,
             initialData: BluetoothDeviceState.connecting,
             builder: (c, snapshot) {
               VoidCallback? onPressed;
               String text;
               switch (snapshot.data) {
                 case BluetoothDeviceState.connected:
-                  onPressed = () => device.disconnect();
+                  onPressed = () => widget.device.disconnect();
                   text = 'DISCONNECT';
                   break;
                 case BluetoothDeviceState.disconnected:
-                  onPressed = () => device.connect();
+                  onPressed = () => widget.device.connect();
                   text = 'CONNECT';
                   break;
                 default:
@@ -80,7 +87,7 @@ class DeviceScreen extends StatelessWidget {
         child: Column(
           children: <Widget>[
             StreamBuilder<BluetoothDeviceState>(
-              stream: device.state,
+              stream: widget.device.state,
               initialData: BluetoothDeviceState.connecting,
               builder: (c, snapshot) => ListTile(
                 leading: (snapshot.data == BluetoothDeviceState.connected)
@@ -88,16 +95,16 @@ class DeviceScreen extends StatelessWidget {
                     : const Icon(Icons.bluetooth_disabled),
                 title: Text(
                     'Device is ${snapshot.data.toString().split('.')[1]}.'),
-                subtitle: Text('${device.id}'),
+                subtitle: Text('${widget.device.id}'),
                 trailing: StreamBuilder<bool>(
-                  stream: device.isDiscoveringServices,
+                  stream: widget.device.isDiscoveringServices,
                   initialData: false,
                   builder: (c, snapshot) => IndexedStack(
                     index: snapshot.data! ? 1 : 0,
                     children: <Widget>[
                       IconButton(
                         icon: const Icon(Icons.refresh),
-                        onPressed: () => device.discoverServices(),
+                        onPressed: () => widget.device.discoverServices(),
                       ),
                       const IconButton(
                         icon: SizedBox(
@@ -115,7 +122,7 @@ class DeviceScreen extends StatelessWidget {
               ),
             ),
             StreamBuilder<List<BluetoothService>>(
-              stream: device.services,
+              stream: widget.device.services,
               initialData: const [],
               builder: (c, snapshot) {
                 return Column(
@@ -131,8 +138,13 @@ class DeviceScreen extends StatelessWidget {
 
   handleEvent(characteristic) async {
     await characteristic.setNotifyValue(!characteristic.isNotifying);
+
+    setState(() {
+      buttonText = (characteristic.isNotifying) ? 'Not Notify' : 'Notify';
+    });
+
     characteristic.value.listen((value) {
-      if(!value.isEmpty) {
+      if (!value.isEmpty) {
         if (characteristic.uuid.toString() == temperatureUUID) {
           print("Temperature: ${value[0]}");
           postTemperature(value[0].toString());
