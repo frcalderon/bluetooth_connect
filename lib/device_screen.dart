@@ -32,7 +32,7 @@ class DeviceScreenState extends State<DeviceScreen> {
                               onPressed: () async {
                                 await handleEvent(characteristic);
                               },
-                              child: const Text('Notify'),
+                              child: Text(buttonText),
                             ),
                           ],
                         ),
